@@ -5,8 +5,6 @@
 [main]
 # Unique identifier for Hyprland window rules
 app-id=foot-quake
-# Custom title for waybar display
-title=LLM Chat
 # Larger font for chat readability
 font=CommitMono Nerd Font:size=11
 # Increased padding for visual comfort
@@ -29,10 +27,10 @@ foreground=d8dee9
 # ==== TRANSPARENCY SETTING ====
 # Adjust this value (0.0 = fully transparent, 1.0 = opaque)
 # Recommended: 0.88-0.95 for readability with transparency effect
-alpha=0.50
+alpha=0.92
 
-# Cursor color (text, background) - white cursor
-cursor=2e3440 eceff4
+# Cursor color (foreground background)
+cursor=88c0d0 2e3440
 
 # Normal colors (Nord palette)
 regular0=3b4252  # nord1 (black)
