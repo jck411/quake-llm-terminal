@@ -5,11 +5,16 @@ A simple dropdown (quake-style) terminal for Hyprland that can switch between sh
 ## Quick Start
 
 1. Press your quake hotkey to open the terminal (e.g., `SUPER+A`)
-2. Inside the terminal, use `quake-switch` to change modes:
+2. **On fresh session**, a menu appears:
+   - `1) OpenRouter` - starts backend + MCP if needed, then `shell-chat`
+   - `2) Gemini` - starts MCP if needed, then `gemini-chat`
+   - `3) Terminal` - plain shell
+
+3. Inside the terminal, use `quake-switch` to change modes:
 
 ```bash
 # Start chat mode (requires backend server running)
-quake-switch backend
+quake-switch openrouter
 
 # Return to plain shell
 quake-switch shell
