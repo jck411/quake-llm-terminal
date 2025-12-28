@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="/home/human/REPOS/Backend_FastAPI"
 SHELL_CHAT="$BACKEND_DIR/.venv/bin/shell-chat"
 GEMINI_CHAT="/home/human/REPOS/gemini-cli/.venv/bin/gemini-chat"
+GROQ_CHAT="/home/human/REPOS/groq-cli/.venv/bin/groq-chat"
 
 # Session cache directories
 SHELL_CHAT_SESSION="$HOME/.cache/shell-chat/session_id"
@@ -81,9 +82,10 @@ echo -e "${BOLD}╚════════════════════�
 echo ""
 echo -e "  ${CYAN}1${NC}) OpenRouter  ${GREEN}(shell-chat via Backend)${NC}"
 echo -e "  ${CYAN}2${NC}) Gemini      ${GREEN}(gemini-chat direct)${NC}"
-echo -e "  ${CYAN}3${NC}) Terminal    ${GREEN}(plain shell)${NC}"
+echo -e "  ${CYAN}3${NC}) Groq        ${GREEN}(groq-chat direct)${NC}"
+echo -e "  ${CYAN}4${NC}) Terminal    ${GREEN}(plain shell)${NC}"
 echo ""
-echo -n -e "${BOLD}Select [1-3]:${NC} "
+echo -n -e "${BOLD}Select [1-4]:${NC} "
 read -r choice
 
 case "$choice" in
@@ -117,7 +119,21 @@ case "$choice" in
             exec bash
         fi
         ;;
-    3|"")
+    3)
+        clear
+        # Start MCP if not running
+        if ! is_mcp_running; then
+            start_mcp
+        fi
+        
+        if [[ -x "$GROQ_CHAT" ]]; then
+            exec "$GROQ_CHAT"
+        else
+            echo "groq-chat not found at: $GROQ_CHAT"
+            exec bash
+        fi
+        ;;
+    4|"")
         clear
         exec bash
         ;;

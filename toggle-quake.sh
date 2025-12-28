@@ -1,6 +1,9 @@
 #!/bin/bash
-# Toggle quake terminal - show/hide dropdown terminal
-# SUPER+A: hide/show (preserves session)
+# Toggle quake terminal - cycle through 3 modes with Super+A:
+#   1. Quake mode (pinned, floating, dropdown)
+#   2. Regular window (tiled, unpinned)
+#   3. Hidden (offscreen)
+#
 # SUPER+Q: close window (next toggle spawns fresh)
 # SUPER+Z: toggle default provider
 
@@ -9,9 +12,13 @@ SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 BACKEND_DIR="/home/human/REPOS/Backend_FastAPI"
 SHELL_CHAT="$BACKEND_DIR/.venv/bin/shell-chat"
 GEMINI_CHAT="/home/human/REPOS/gemini-cli/.venv/bin/gemini-chat"
+GROQ_CHAT="/home/human/REPOS/groq-cli/.venv/bin/groq-chat"
 CONFIG_FILE="$HOME/.config/quake-llm-terminal/default-provider"
 
-QUAKE_VISIBLE_Y=44
+QUAKE_WIDTH=500
+QUAKE_HEIGHT=500
+QUAKE_X=6
+QUAKE_Y=44
 QUAKE_HIDDEN_Y=-600
 
 # Read default provider (fallback to terminal)
@@ -85,6 +92,13 @@ build_command() {
             fi
             echo "$GEMINI_CHAT"
             ;;
+        groq)
+            # Start MCP if not running
+            if ! is_mcp_running; then
+                start_mcp
+            fi
+            echo "$GROQ_CHAT"
+            ;;
         terminal|*)
             echo "bash"
             ;;
@@ -93,20 +107,50 @@ build_command() {
 
 # Check if foot-quake is running
 if ! hyprctl clients -j | jq -e '.[] | select(.class == "foot-quake")' > /dev/null 2>&1; then
-    # Not running - spawn terminal with default provider
+    # Not running - spawn terminal in quake mode with default provider
     CMD=$(build_command)
     foot --config "$FOOT_CONFIG" -e "$CMD" &
     exit 0
 fi
 
-# Get current Y position of quake terminal
+# Get current state
 CURRENT_Y=$(hyprctl clients -j | jq -r '.[] | select(.class == "foot-quake") | .at[1]')
+IS_PINNED=$(hyprctl clients -j | jq -r '.[] | select(.class == "foot-quake") | .pinned')
+IS_FLOATING=$(hyprctl clients -j | jq -r '.[] | select(.class == "foot-quake") | .floating')
 
-if [[ "$CURRENT_Y" -ge 0 ]]; then
-    # Currently visible - hide it by moving offscreen
-    hyprctl dispatch movewindowpixel "exact 6 $QUAKE_HIDDEN_Y,class:foot-quake"
-else
-    # Currently hidden - show it
-    hyprctl dispatch movewindowpixel "exact 6 $QUAKE_VISIBLE_Y,class:foot-quake"
+# Determine current mode and cycle to next
+# Mode detection:
+#   - Hidden: Y < 0 (offscreen)
+#   - Quake mode: pinned && floating && visible
+#   - Regular window: !pinned (tiled or floating but not pinned)
+
+if [[ "$CURRENT_Y" -lt 0 ]]; then
+    # Currently hidden -> show in quake mode
+    # Ensure it's in quake mode (pinned, floating, positioned)
+    if [[ "$IS_FLOATING" == "false" ]]; then
+        hyprctl dispatch togglefloating class:foot-quake
+    fi
+    if [[ "$IS_PINNED" == "false" ]]; then
+        hyprctl dispatch pin class:foot-quake
+    fi
+    hyprctl setprop class:foot-quake noborder 1
+    hyprctl dispatch resizewindowpixel "exact $QUAKE_WIDTH $QUAKE_HEIGHT,class:foot-quake"
+    hyprctl dispatch movewindowpixel "exact $QUAKE_X $QUAKE_Y,class:foot-quake"
     hyprctl dispatch focuswindow class:foot-quake
+elif [[ "$IS_PINNED" == "true" ]]; then
+    # Currently in quake mode -> switch to regular tiled window
+    hyprctl dispatch pin class:foot-quake
+    hyprctl setprop class:foot-quake noborder 0
+    hyprctl dispatch togglefloating class:foot-quake
+    notify-send "Quake Terminal" "Regular window" -t 1000
+else
+    # Currently in regular window mode -> hide
+    # First restore to quake mode position, then hide
+    if [[ "$IS_FLOATING" == "false" ]]; then
+        hyprctl dispatch togglefloating class:foot-quake
+    fi
+    hyprctl dispatch pin class:foot-quake
+    hyprctl setprop class:foot-quake noborder 1
+    hyprctl dispatch resizewindowpixel "exact $QUAKE_WIDTH $QUAKE_HEIGHT,class:foot-quake"
+    hyprctl dispatch movewindowpixel "exact $QUAKE_X $QUAKE_HIDDEN_Y,class:foot-quake"
 fi

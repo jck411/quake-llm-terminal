@@ -22,6 +22,10 @@ case "$CURRENT" in
         DISPLAY_NAME="Gemini"
         ;;
     gemini)
+        NEXT="groq"
+        DISPLAY_NAME="Groq"
+        ;;
+    groq)
         NEXT="terminal"
         DISPLAY_NAME="Terminal"
         ;;
